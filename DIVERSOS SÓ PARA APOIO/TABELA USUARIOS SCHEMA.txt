@@ -1,0 +1,29 @@
+create table public.usuarios (
+  id uuid not null,
+  empresa_id uuid null,
+  name text null,
+  role text null,
+  created_at timestamp with time zone null default now(),
+  phone text null,
+  placa text null,
+  status_entregador text null default 'offline'::text,
+  cpf text null,
+  email character varying null,
+  cep text null,
+  street text null,
+  number text null,
+  neighborhood text null,
+  state text null,
+  complement text null,
+  city text null,
+  nome text null,
+  telefone text null,
+  constraint usuarios_pkey primary key (id),
+  constraint usuarios_empresa_id_fkey foreign KEY (empresa_id) references empresas (id) on delete CASCADE,
+  constraint usuarios_id_fkey foreign KEY (id) references auth.users (id) on delete CASCADE,
+  constraint usuarios_role_check check (
+    (
+      role = any (array['admin'::text, 'entregador'::text])
+    )
+  )
+) TABLESPACE pg_default;
