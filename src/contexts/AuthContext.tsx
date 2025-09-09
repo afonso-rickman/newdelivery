@@ -1,119 +1,63 @@
-import {
-  createContext,
-  useState,
-  useEffect,
-  ReactNode,
-  useCallback,
-  useContext,
-} from "react";
-import { onAuthStateChanged, signOut } from "@/services/authService";
-import { supabase } from "@/integrations/supabase/client";
-
-interface AuthUser {
-  id: string;
-  email?: string;
-  role?: string;
-  empresa_id?: string;
-  nome?: string;
-  telefone?: string;
-  slug?: string;
-}
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { authService, Usuario } from "@/services/authService";
 
 interface AuthContextType {
-  currentUser: AuthUser | null;
+  currentUser: Usuario | null;
   loading: boolean;
-  signIn: (email: string, password: string, empresaSlug: string) => Promise<void>;
+  signIn: (email: string, password: string, slug?: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Login com suporte a empresa (slug)
-  const signIn = useCallback(
-    async (email: string, password: string, empresaSlug: string) => {
-      setLoading(true);
+  useEffect(() => {
+    const loadUser = async () => {
       try {
-        const result = await import("@/services/authService").then((m) =>
-          m.signIn(email, password, empresaSlug)
-        );
-
-        if (result) {
-          const { user, empresa, usuario } = result;
-          setCurrentUser({
-            id: user.id,
-            email: user.email ?? undefined,
-            role: usuario.role,
-            empresa_id: usuario.empresa_id,
-            nome: usuario.nome,
-            telefone: usuario.telefone,
-            slug: empresa.slug,
-          });
-        }
+        const user = await authService.getCurrentUser();
+        setCurrentUser(user);
+      } catch (error) {
+        console.error("Erro ao carregar usuário atual:", error);
+        setCurrentUser(null);
       } finally {
         setLoading(false);
       }
-    },
-    []
-  );
-
-  // 🔹 Logout
-  const handleSignOut = useCallback(async () => {
-    await signOut();
-    setCurrentUser(null);
-  }, []);
-
-  // 🔹 Persistência da sessão
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(async (user) => {
-      if (user) {
-        const { data: usuario } = await supabase
-          .from("usuarios")
-          .select("role, empresa_id, nome, telefone")
-          .eq("id", user.id)
-          .single();
-
-        setCurrentUser({
-          id: user.id,
-          email: user.email ?? undefined,
-          role: usuario?.role,
-          empresa_id: usuario?.empresa_id,
-          nome: usuario?.nome,
-          telefone: usuario?.telefone,
-        });
-      } else {
-        setCurrentUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => {
-      unsubscribe?.();
     };
+    loadUser();
   }, []);
+
+  const signIn = async (email: string, password: string, slug?: string) => {
+    setLoading(true);
+    try {
+      const user = await authService.signIn(email, password, slug);
+      setCurrentUser(user);
+    } catch (error) {
+      console.error("Erro no login:", error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signOut = async () => {
+    await authService.signOut();
+    setCurrentUser(null);
+  };
 
   return (
-    <AuthContext.Provider
-      value={{
-        currentUser,
-        loading,
-        signIn,
-        signOut: handleSignOut,
-      }}
-    >
+    <AuthContext.Provider value={{ currentUser, loading, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-// 🔹 Hook useAuth
-export function useAuth() {
+export const useAuthContext = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
+  if (!context) {
+    throw new Error("useAuthContext deve ser usado dentro de um AuthProvider");
   }
   return context;
-}
+};
