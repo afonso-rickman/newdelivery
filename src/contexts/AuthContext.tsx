@@ -4,6 +4,7 @@ import {
   useEffect,
   ReactNode,
   useCallback,
+  useContext,
 } from "react";
 import { onAuthStateChanged, signOut } from "@/services/authService";
 import { supabase } from "@/integrations/supabase/client";
@@ -106,4 +107,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
+}
+
+// 🔹 Hook useAuth
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
+  }
+  return context;
 }
