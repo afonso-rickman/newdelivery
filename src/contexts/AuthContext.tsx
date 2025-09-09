@@ -1,53 +1,83 @@
-import React, { createContext, useEffect, useState } from "react";
-import { User } from "@supabase/supabase-js";
-import { signUp, signIn, logOut } from "@/services/authService";
-import { supabase } from "@/lib/supabaseClient";
+import {
+  createContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useCallback,
+} from "react";
+import { onAuthStateChanged, signOut } from "@/services/authService";
+import { supabase } from "@/integrations/supabase/client";
 
-interface CustomUser extends User {
+interface AuthUser {
+  id: string;
+  email?: string;
   role?: string;
   empresa_id?: string;
   nome?: string;
   telefone?: string;
+  slug?: string;
 }
 
 interface AuthContextType {
-  currentUser: CustomUser | null;
+  currentUser: AuthUser | null;
   loading: boolean;
-  signUp: (
-    email: string,
-    password: string,
-    empresaId: string,
-    nome?: string,
-    telefone?: string,
-    role?: string
-  ) => Promise<void>;
-  signIn: (
-    email: string,
-    password: string,
-    empresaId: string
-  ) => Promise<void>;
-  logOut: () => Promise<void>;
+  signIn: (email: string, password: string, empresaSlug: string) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<CustomUser | null>(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 🔹 Login com suporte a empresa (slug)
+  const signIn = useCallback(
+    async (email: string, password: string, empresaSlug: string) => {
+      setLoading(true);
+      try {
+        const result = await import("@/services/authService").then((m) =>
+          m.signIn(email, password, empresaSlug)
+        );
+
+        if (result) {
+          const { user, empresa, usuario } = result;
+          setCurrentUser({
+            id: user.id,
+            email: user.email ?? undefined,
+            role: usuario.role,
+            empresa_id: usuario.empresa_id,
+            nome: usuario.nome,
+            telefone: usuario.telefone,
+            slug: empresa.slug,
+          });
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  // 🔹 Logout
+  const handleSignOut = useCallback(async () => {
+    await signOut();
+    setCurrentUser(null);
+  }, []);
+
+  // 🔹 Persistência da sessão
   useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_, session) => {
-      if (session?.user) {
+    const unsubscribe = onAuthStateChanged(async (user) => {
+      if (user) {
         const { data: usuario } = await supabase
           .from("usuarios")
-          .select("*")
-          .eq("id", session.user.id)
+          .select("role, empresa_id, nome, telefone")
+          .eq("id", user.id)
           .single();
 
         setCurrentUser({
-          ...session.user,
+          id: user.id,
+          email: user.email ?? undefined,
           role: usuario?.role,
           empresa_id: usuario?.empresa_id,
           nome: usuario?.nome,
@@ -60,55 +90,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => {
-      subscription.unsubscribe();
+      unsubscribe?.();
     };
   }, []);
-
-  const handleSignUp = async (
-    email: string,
-    password: string,
-    empresaId: string,
-    nome?: string,
-    telefone?: string,
-    role?: string
-  ) => {
-    setLoading(true);
-    await signUp(email, password, empresaId, nome, telefone, role);
-    setLoading(false);
-  };
-
-  const handleSignIn = async (
-    email: string,
-    password: string,
-    empresaId: string
-  ) => {
-    setLoading(true);
-    const usuario = await signIn(email, password, empresaId);
-    if (usuario) {
-      setCurrentUser(usuario as CustomUser);
-    }
-    setLoading(false);
-  };
-
-  const handleLogOut = async () => {
-    await logOut();
-    setCurrentUser(null);
-  };
 
   return (
     <AuthContext.Provider
       value={{
         currentUser,
         loading,
-        signUp: handleSignUp,
-        signIn: handleSignIn,
-        logOut: handleLogOut,
+        signIn,
+        signOut: handleSignOut,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
-};
-
-// 👉 exporta só para ser usado dentro de useAuth.ts
-export default AuthContext;
+}

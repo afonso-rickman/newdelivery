@@ -1,78 +1,48 @@
-// services/authService.ts
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 
-interface Usuario {
-  id: string;
-  empresa_id: string | null;
-  role: string | null;
-  nome?: string;
-  telefone?: string;
-  email?: string;
-}
-
-// ---------- SIGN UP ----------
-export async function signUp(
-  email: string,
-  password: string,
-  empresaId: string,
-  nome?: string,
-  telefone?: string,
-  role: string = "cliente"
-): Promise<any> {
-  // Cria usuário no Supabase Auth
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-  });
-
-  if (error) throw error;
-
-  const user = data.user;
-
-  // Se o usuário foi criado, insere na tabela 'usuarios'
-  if (user) {
-    await supabase.from("usuarios").upsert({
-      id: user.id, // mesmo id do auth.users
-      empresa_id: empresaId,
-      nome,
-      telefone,
-      email,
-      role,
-    });
-  }
-
-  return data;
-}
-
-// ---------- SIGN IN ----------
-export async function signIn(
-  email: string,
-  password: string,
-  empresaId: string
-): Promise<Usuario | null> {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+// 🔹 Login com validação de empresa (via slug)
+export async function signIn(email: string, password: string, empresaSlug: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) throw error;
   if (!data.user) return null;
 
-  // Busca os dados do usuário vinculado à empresa
-  const { data: usuarios, error: userError } = await supabase
+  // Busca empresa pelo slug
+  const { data: empresa, error: empresaError } = await supabase
+    .from("empresas")
+    .select("id, slug")
+    .eq("slug", empresaSlug)
+    .single();
+
+  if (empresaError || !empresa) {
+    throw new Error("Empresa não encontrada");
+  }
+
+  // Verifica se usuário pertence à empresa
+  const { data: usuario, error: usuarioError } = await supabase
     .from("usuarios")
     .select("id, empresa_id, role, nome, telefone, email")
     .eq("id", data.user.id)
-    .eq("empresa_id", empresaId)
+    .eq("empresa_id", empresa.id)
     .single();
 
-  if (userError) throw userError;
+  if (usuarioError || !usuario) {
+    throw new Error("Usuário não tem acesso a esta empresa");
+  }
 
-  return usuarios as Usuario;
+  return { user: data.user, empresa, usuario };
 }
 
-// ---------- LOG OUT ----------
-export async function logOut() {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+// 🔹 Logout
+export async function signOut() {
+  await supabase.auth.signOut();
+}
+
+// 🔹 Listener para mudanças de sessão
+export function onAuthStateChanged(callback: (user: any) => void) {
+  const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    callback(session?.user ?? null);
+  });
+
+  return () => listener.subscription.unsubscribe();
 }
