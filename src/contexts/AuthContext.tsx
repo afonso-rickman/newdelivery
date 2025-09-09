@@ -1,25 +1,13 @@
-// src/contexts/AuthContext.tsx
-import React, { createContext, useEffect, useState, useContext } from "react";
+import React, { createContext, useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { signUp, signIn, logOut } from "@/services/authService";
 import { supabase } from "@/lib/supabaseClient";
-
-interface UserAddress {
-  cep?: string;
-  street?: string;
-  number?: string;
-  complement?: string;
-  neighborhood?: string;
-  city?: string;
-  state?: string;
-}
 
 interface CustomUser extends User {
   role?: string;
   empresa_id?: string;
   nome?: string;
   telefone?: string;
-  address?: UserAddress;
 }
 
 interface AuthContextType {
@@ -52,7 +40,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_, session) => {
       if (session?.user) {
-        // Busca os dados extras da tabela usuarios
         const { data: usuario } = await supabase
           .from("usuarios")
           .select("*")
@@ -98,9 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     const usuario = await signIn(email, password, empresaId);
     if (usuario) {
-      setCurrentUser({
-        ...usuario,
-      } as CustomUser);
+      setCurrentUser(usuario as CustomUser);
     }
     setLoading(false);
   };
@@ -125,8 +110,5 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth deve ser usado dentro de AuthProvider");
-  return context;
-};
+// 👉 exporta só para ser usado dentro de useAuth.ts
+export default AuthContext;
