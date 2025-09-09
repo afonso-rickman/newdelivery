@@ -72,7 +72,10 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               {/* Rotas públicas */}
+			  {/* Login padrão (sem empresa) */}
               <Route path="/login" element={<Login />} />
+			          {/* Login com slug da empresa */}
+			  <Route path="/:slug/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/admin-register" element={<AdminRegister />} />
               <Route path="/checkout" element={<Checkout />} />
@@ -107,16 +110,6 @@ const App = () => (
                   <PrivateRoute role="admin">
                     <AppLayout>
                       <AdminDashboard />
-                    </AppLayout>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <PrivateRoute role="admin">
-                    <AppLayout>
-                      <Admin />
                     </AppLayout>
                   </PrivateRoute>
                 }
