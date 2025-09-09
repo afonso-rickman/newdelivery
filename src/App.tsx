@@ -18,6 +18,7 @@ import Entregador from "./pages/Entregador";
 import PDV from "./pages/PDV";
 import Api from "./pages/Api";
 import NotFound from "./pages/NotFound";
+
 import Checkout from "./pages/Checkout";
 import AppLayout from "@/components/layouts/AppLayout";
 import AdminRegister from "./pages/AdminRegister";
@@ -262,7 +263,7 @@ const App = () => (
 </Routes>
 
 
-            <ShoppingCart />
+
           </BrowserRouter>
         </CartProvider>
       </AuthProvider>
