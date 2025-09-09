@@ -72,14 +72,16 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               {/* Rotas públicas */}
+			  {/* Login padrão (sem empresa) */}
               <Route path="/login" element={<Login />} />
+			          {/* Login com slug da empresa */}
+			  <Route path="/:slug/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/admin-register" element={<AdminRegister />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/unauthorized" element={<NotFound />} /> {/* Ou uma página de "Acesso Negado" */}
-
               {/* Rota inicial que usa AppLayout */}
               <Route
                 path="/"
