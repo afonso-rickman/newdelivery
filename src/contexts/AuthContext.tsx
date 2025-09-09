@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+// src/contexts/AuthContext.tsx
+import React, { createContext, useState, useEffect, useContext } from "react";
 import { authService, type Usuario } from "@/services/authService";
 
 interface AuthContextType {
@@ -10,48 +11,32 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Carrega sessão persistida do usuário
   useEffect(() => {
-    let mounted = true;
-    (async () => {
+    const init = async () => {
       try {
         const user = await authService.getCurrentUser();
-        if (mounted) setCurrentUser(user);
-      } catch (error) {
-        console.error("Erro ao carregar usuário atual:", error);
-        if (mounted) setCurrentUser(null);
+        setCurrentUser(user);
+      } catch {
+        setCurrentUser(null);
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
-    })();
-    return () => {
-      mounted = false;
     };
+    init();
   }, []);
 
   const signIn = async (email: string, password: string, slug?: string) => {
-    setLoading(true);
-    try {
-      const user = await authService.signIn(email, password, slug);
-      setCurrentUser(user);
-    } catch (error) {
-      console.error("Erro no login:", error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+    const user = await authService.signIn(email, password, slug);
+    setCurrentUser(user);
   };
 
   const signOut = async () => {
-    try {
-      await authService.signOut();
-    } finally {
-      setCurrentUser(null);
-    }
+    await authService.signOut();
+    setCurrentUser(null);
   };
 
   return (
@@ -61,11 +46,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-// Hook auxiliar (pode usar esse em vez de importar direto o contexto)
-export const useAuthContext = () => {
+// 🔹 Hook useAuth (inline no AuthContext)
+export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuthContext deve ser usado dentro de um AuthProvider");
+  if (context === undefined) {
+    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
   }
   return context;
-};
+}
