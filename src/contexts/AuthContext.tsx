@@ -1,63 +1,119 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { authService, Usuario } from "@/services/authService";
+import {
+  createContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useCallback,
+  useContext,
+} from "react";
+import { onAuthStateChanged, signOut } from "@/services/authService";
+import { supabase } from "@/integrations/supabase/client";
+
+interface AuthUser {
+  id: string;
+  email?: string;
+  role?: string;
+  empresa_id?: string;
+  nome?: string;
+  telefone?: string;
+  slug?: string;
+}
 
 interface AuthContextType {
-  currentUser: Usuario | null;
+  currentUser: AuthUser | null;
   loading: boolean;
-  signIn: (email: string, password: string, slug?: string) => Promise<void>;
+  signIn: (email: string, password: string, empresaSlug: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<Usuario | null>(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadUser = async () => {
+  // 🔹 Login com suporte a empresa (slug)
+  const signIn = useCallback(
+    async (email: string, password: string, empresaSlug: string) => {
+      setLoading(true);
       try {
-        const user = await authService.getCurrentUser();
-        setCurrentUser(user);
-      } catch (error) {
-        console.error("Erro ao carregar usuário atual:", error);
-        setCurrentUser(null);
+        const result = await import("@/services/authService").then((m) =>
+          m.signIn(email, password, empresaSlug)
+        );
+
+        if (result) {
+          const { user, empresa, usuario } = result;
+          setCurrentUser({
+            id: user.id,
+            email: user.email ?? undefined,
+            role: usuario.role,
+            empresa_id: usuario.empresa_id,
+            nome: usuario.nome,
+            telefone: usuario.telefone,
+            slug: empresa.slug,
+          });
+        }
       } finally {
         setLoading(false);
       }
-    };
-    loadUser();
+    },
+    []
+  );
+
+  // 🔹 Logout
+  const handleSignOut = useCallback(async () => {
+    await signOut();
+    setCurrentUser(null);
   }, []);
 
-  const signIn = async (email: string, password: string, slug?: string) => {
-    setLoading(true);
-    try {
-      const user = await authService.signIn(email, password, slug);
-      setCurrentUser(user);
-    } catch (error) {
-      console.error("Erro no login:", error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 🔹 Persistência da sessão
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(async (user) => {
+      if (user) {
+        const { data: usuario } = await supabase
+          .from("usuarios")
+          .select("role, empresa_id, nome, telefone")
+          .eq("id", user.id)
+          .single();
 
-  const signOut = async () => {
-    await authService.signOut();
-    setCurrentUser(null);
-  };
+        setCurrentUser({
+          id: user.id,
+          email: user.email ?? undefined,
+          role: usuario?.role,
+          empresa_id: usuario?.empresa_id,
+          nome: usuario?.nome,
+          telefone: usuario?.telefone,
+        });
+      } else {
+        setCurrentUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      unsubscribe?.();
+    };
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ currentUser, loading, signIn, signOut }}>
+    <AuthContext.Provider
+      value={{
+        currentUser,
+        loading,
+        signIn,
+        signOut: handleSignOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuthContext = () => {
+// 🔹 Hook useAuth
+export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuthContext deve ser usado dentro de um AuthProvider");
+  if (context === undefined) {
+    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
   }
   return context;
-};
+}
