@@ -70,125 +70,199 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              {/* Rotas públicas */}
-			  {/* Login padrão (sem empresa) */}
-              <Route path="/login" element={<Login />} />
-			          {/* Login com slug da empresa */}
-			  <Route path="/:slug/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/admin-register" element={<AdminRegister />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/unauthorized" element={<NotFound />} /> {/* Ou uma página de "Acesso Negado" */}
-              {/* Rota inicial que usa AppLayout */}
-              <Route
-                path="/"
-                element={
-                  <AppLayout>
-                    <Index />
-                  </AppLayout>
-                }
-              />
 
-              {/* Rotas de Admin e outras rotas privadas com verificação de role */}
-              <Route
-                path="/admin-coupons"
-                element={
-                  <PrivateRoute role="admin">
-                    <AppLayout>
-                       <AdminCupons />
-                    </AppLayout>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/admin-dashboard"
-                element={
-                  <PrivateRoute role="admin">
-                    <AppLayout>
-                      <AdminDashboard />
-                    </AppLayout>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <PrivateRoute role="admin">
-                    <AppLayout>
-                      <Admin />
-                    </AppLayout>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/orders"
-                element={
-                  <PrivateRoute> {/* Esta rota aceita qualquer usuário logado */}
-                    <AppLayout>
-                      <Orders />
-                    </AppLayout>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/admin-orders"
-                element={
-                  <PrivateRoute role="admin">
-                    <AppLayout>
-                      <AdminOrders />
-                    </AppLayout>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/entregador"
-                element={
-                  <PrivateRoute role="entregador">
-                    <AppLayout>
-                      <Entregador />
-                    </AppLayout>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/pdv"
-                element={
-                  <PrivateRoute role="admin">
-                    <AppLayout>
-                      <PDV />
-                    </AppLayout>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/api/*"
-                element={
-                  <PrivateRoute role="admin">
-                    <AppLayout>
-                      <Api />
-                    </AppLayout>
-                  </PrivateRoute>
-                }
-              />
+// ...
+<Routes>
+  {/* públicas */}
+  <Route path="/login" element={<Login />} />
+  <Route path="/:slug/login" element={<Login />} />
+  <Route path="/register" element={<Register />} />
+  <Route path="/admin-register" element={<AdminRegister />} />
+  <Route path="/checkout" element={<Checkout />} />
+  <Route path="/forgot-password" element={<ForgotPassword />} />
+  <Route path="/reset-password" element={<ResetPassword />} />
+  <Route path="/unauthorized" element={<NotFound />} />
 
-              {/* Rota de Cliente para slug específico (se ela ainda precisar de EmpresaProvider) */}
-              <Route
-                path="/:slug"
-                element={
-                  <EmpresaProvider>
-                    <AppLayout>
-                      <Index />
-                    </AppLayout>
-                  </EmpresaProvider>
-                }
-              />
+  {/* home sem slug */}
+  <Route
+    path="/"
+    element={
+      <AppLayout>
+        <Index />
+      </AppLayout>
+    }
+  />
 
-              {/* Rota de 404 */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+  {/* ADMIN — sem slug (mantém compat) */}
+  <Route
+    path="/admin-coupons"
+    element={
+      <PrivateRoute role="admin">
+        <AppLayout>
+          <AdminCupons />
+        </AppLayout>
+      </PrivateRoute>
+    }
+  />
+  <Route
+    path="/admin-dashboard"
+    element={
+      <PrivateRoute role="admin">
+        <AppLayout>
+          <AdminDashboard />
+        </AppLayout>
+      </PrivateRoute>
+    }
+  />
+  <Route
+    path="/admin"
+    element={
+      <PrivateRoute role="admin">
+        <AppLayout>
+          <Admin />
+        </AppLayout>
+      </PrivateRoute>
+    }
+  />
+  <Route
+    path="/orders"
+    element={
+      <PrivateRoute>
+        <AppLayout>
+          <Orders />
+        </AppLayout>
+      </PrivateRoute>
+    }
+  />
+  <Route
+    path="/admin-orders"
+    element={
+      <PrivateRoute role="admin">
+        <AppLayout>
+          <AdminOrders />
+        </AppLayout>
+      </PrivateRoute>
+    }
+  />
+  <Route
+    path="/entregador"
+    element={
+      <PrivateRoute role="entregador">
+        <AppLayout>
+          <Entregador />
+        </AppLayout>
+      </PrivateRoute>
+    }
+  />
+  <Route
+    path="/pdv"
+    element={
+      <PrivateRoute role="admin">
+        <AppLayout>
+          <PDV />
+        </AppLayout>
+      </PrivateRoute>
+    }
+  />
+  <Route
+    path="/api/*"
+    element={
+      <PrivateRoute role="admin">
+        <AppLayout>
+          <Api />
+        </AppLayout>
+      </PrivateRoute>
+    }
+  />
+
+  {/* ADMIN — com slug (novas rotas) */}
+  <Route
+    path="/:slug/admin"
+    element={
+      <PrivateRoute role="admin">
+        <AppLayout>
+          <Admin />
+        </AppLayout>
+      </PrivateRoute>
+    }
+  />
+  <Route
+    path="/:slug/admin-dashboard"
+    element={
+      <PrivateRoute role="admin">
+        <AppLayout>
+          <AdminDashboard />
+        </AppLayout>
+      </PrivateRoute>
+    }
+  />
+  <Route
+    path="/:slug/admin-orders"
+    element={
+      <PrivateRoute role="admin">
+        <AppLayout>
+          <AdminOrders />
+        </AppLayout>
+      </PrivateRoute>
+    }
+  />
+  <Route
+    path="/:slug/orders"
+    element={
+      <PrivateRoute>
+        <AppLayout>
+          <Orders />
+        </AppLayout>
+      </PrivateRoute>
+    }
+  />
+  <Route
+    path="/:slug/entregador"
+    element={
+      <PrivateRoute role="entregador">
+        <AppLayout>
+          <Entregador />
+        </AppLayout>
+      </PrivateRoute>
+    }
+  />
+  <Route
+    path="/:slug/pdv"
+    element={
+      <PrivateRoute role="admin">
+        <AppLayout>
+          <PDV />
+        </AppLayout>
+      </PrivateRoute>
+    }
+  />
+  <Route
+    path="/:slug/api/*"
+    element={
+      <PrivateRoute role="admin">
+        <AppLayout>
+          <Api />
+        </AppLayout>
+      </PrivateRoute>
+    }
+  />
+
+  {/* cliente por slug */}
+  <Route
+    path="/:slug"
+    element={
+      <EmpresaProvider>
+        <AppLayout>
+          <Index />
+        </AppLayout>
+      </EmpresaProvider>
+    }
+  />
+
+  <Route path="*" element={<NotFound />} />
+</Routes>
+
+
             <ShoppingCart />
           </BrowserRouter>
         </CartProvider>
