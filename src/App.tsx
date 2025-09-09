@@ -71,7 +71,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
 
-// ...
+{/* Routes */}
 <Routes>
   {/* públicas */}
   <Route path="/login" element={<Login />} />
