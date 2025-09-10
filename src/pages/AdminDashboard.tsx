@@ -120,7 +120,7 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <Button asChild className="w-full">
-              <Link to="/admin-orders">Acessar Pedidos</Link>
+              <Link to={`/${slug}/admin-orders`}>Acessar Pedidos</Link>
             </Button>
           </CardContent>
         </Card>
@@ -137,7 +137,7 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <Button asChild className="w-full">
-              <Link to="/admin">Gerenciar Cardápio</Link>
+              <Link to={`/${slug}/admin`}>Gerenciar Cardápio</Link>
             </Button>
           </CardContent>
         </Card>
@@ -154,7 +154,7 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <Button asChild className="w-full">
-              <Link to="/pdv">Acessar PDV</Link>
+              <Link to={`/${slug}/pdv`}>Acessar PDV</Link>
             </Button>
           </CardContent>
         </Card>
@@ -170,7 +170,7 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <Button asChild className="w-full">
-              <Link to="/admin-coupons">Gerenciar Cupons</Link>
+              <Link to={`/${slug}/admin-coupons`}>Gerenciar Cupons</Link>
             </Button>
           </CardContent>
         </Card>
