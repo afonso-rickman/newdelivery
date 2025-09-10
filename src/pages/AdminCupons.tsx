@@ -17,10 +17,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch"; // Importe o componente Switch
 import { useEmpresa } from "@/hooks/useEmpresa";
 
-const AdminCupons = () => {
-  const { slug } = useParams();
-  const navigate = useNavigate();
-
 export default function AdminCupons() {
   const [cupons, setCupons] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
@@ -225,6 +221,10 @@ export default function AdminCupons() {
       }
     }
   };
+
+const AdminCupons = () => {
+  const { slug } = useParams();
+  const navigate = useNavigate();
 
  return (
     <div className="p-6 max-w-4xl mx-auto font-sans">
