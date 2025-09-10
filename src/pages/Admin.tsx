@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { SeedDataButton } from "@/components/admin/SeedDataButton"; 
 import { supabase } from '@/lib/supabaseClient';
 
 const Admin = () => {
+  const { slug } = useParams();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -127,11 +128,11 @@ const Admin = () => {
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <SeedDataButton onDataChange={loadData} />
             <Button
-              onClick={() => navigate("/")}
+              onClick={() => navigate(`/${slug}/admin-dashboard`)}
               variant="outline"
               className="w-full sm:w-auto text-sm"
             >
-              Voltar para o Cardápio
+              Voltar ao Dashboard
             </Button>
           </div>
         </div>
