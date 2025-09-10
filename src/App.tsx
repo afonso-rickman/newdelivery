@@ -95,93 +95,11 @@ const App = () => (
 
   {/* ADMIN — sem slug (mantém compat) */}
   <Route
-    path="/admin-coupons"
+    path="/:slug/admin-coupons"
     element={
       <PrivateRoute role="admin">
         <AppLayout>
           <AdminCupons />
-        </AppLayout>
-      </PrivateRoute>
-    }
-  />
-  <Route
-    path="/admin-dashboard"
-    element={
-      <PrivateRoute role="admin">
-        <AppLayout>
-          <AdminDashboard />
-        </AppLayout>
-      </PrivateRoute>
-    }
-  />
-  <Route
-    path="/admin"
-    element={
-      <PrivateRoute role="admin">
-        <AppLayout>
-          <Admin />
-        </AppLayout>
-      </PrivateRoute>
-    }
-  />
-  <Route
-    path="/orders"
-    element={
-      <PrivateRoute>
-        <AppLayout>
-          <Orders />
-        </AppLayout>
-      </PrivateRoute>
-    }
-  />
-  <Route
-    path="/admin-orders"
-    element={
-      <PrivateRoute role="admin">
-        <AppLayout>
-          <AdminOrders />
-        </AppLayout>
-      </PrivateRoute>
-    }
-  />
-  <Route
-    path="/entregador"
-    element={
-      <PrivateRoute role="entregador">
-        <AppLayout>
-          <Entregador />
-        </AppLayout>
-      </PrivateRoute>
-    }
-  />
-  <Route
-    path="/pdv"
-    element={
-      <PrivateRoute role="admin">
-        <AppLayout>
-          <PDV />
-        </AppLayout>
-      </PrivateRoute>
-    }
-  />
-  <Route
-    path="/api/*"
-    element={
-      <PrivateRoute role="admin">
-        <AppLayout>
-          <Api />
-        </AppLayout>
-      </PrivateRoute>
-    }
-  />
-
-  {/* ADMIN — com slug (novas rotas) */}
-  <Route
-    path="/:slug/admin"
-    element={
-      <PrivateRoute role="admin">
-        <AppLayout>
-          <Admin />
         </AppLayout>
       </PrivateRoute>
     }
@@ -197,11 +115,11 @@ const App = () => (
     }
   />
   <Route
-    path="/:slug/admin-orders"
+    path="/:slug/admin"
     element={
       <PrivateRoute role="admin">
         <AppLayout>
-          <AdminOrders />
+          <Admin />
         </AppLayout>
       </PrivateRoute>
     }
@@ -212,6 +130,16 @@ const App = () => (
       <PrivateRoute>
         <AppLayout>
           <Orders />
+        </AppLayout>
+      </PrivateRoute>
+    }
+  />
+  <Route
+    path="/:slug/admin-orders"
+    element={
+      <PrivateRoute role="admin">
+        <AppLayout>
+          <AdminOrders />
         </AppLayout>
       </PrivateRoute>
     }
@@ -247,7 +175,7 @@ const App = () => (
     }
   />
 
-  {/* cliente por slug */}
+   {/* cliente por slug */}
   <Route
     path="/:slug"
     element={
