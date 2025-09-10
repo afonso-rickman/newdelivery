@@ -15,16 +15,19 @@ export const authService = {
    * Faz login no Supabase Auth + valida empresa pelo slug
    */
   signIn: async (email: string, password: string, slug?: string): Promise<Usuario> => {
+	 console.log("[authService] Tentando login", { email, slug });
     // 1. Login no Supabase
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     if (error || !data.user) {
+		console.error("[authService] Erro no Supabase Auth", error);
       throw new Error("Email ou senha inválidos");
     }
 
     // 2. Busca registro do usuário na tabela usuarios
+	console.log("[authService] Auth OK, buscando em usuarios...");
     const { data: usuario, error: usuarioError } = await supabase
       .from("usuarios")
       .select("id, empresa_id, role, nome, telefone, email")
@@ -32,6 +35,7 @@ export const authService = {
       .single();
 
     if (usuarioError || !usuario) {
+	  console.error("[authService] Usuário não encontrado na tabela usuarios", usuarioError);
       throw new Error("Usuário não encontrado na tabela usuarios");
     }
 
@@ -43,6 +47,7 @@ export const authService = {
     // 4. Se não foi passado slug → login genérico (sem empresa específica)
     if (!slug) {
       return usuario;
+	    console.log("[authService] Usuário encontrado", usuario);
     }
 
     // 5. Busca empresa pelo slug
