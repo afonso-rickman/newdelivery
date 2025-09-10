@@ -61,7 +61,7 @@ const AdminOrders = () => {
       setLoading(true);
 
       const { data, error } = await supabase
-        .from("orders")
+        .from("pedidos")
         .select("*")
         .eq("empresa_id", empresaId)
         .order("created_at", { ascending: false });
