@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 // Importações do Firestore (mantidas para a lógica de pedidos)
 import { collection, query, where, onSnapshot, orderBy, Timestamp, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase"; // Assumindo que db é sua instância do Firestore
@@ -42,6 +42,7 @@ interface Deliverer {
 }
 
 const AdminOrders = () => {
+  const { slug } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -498,8 +499,8 @@ const AdminOrders = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gerenciamento de Pedidos</h1>
-        <Button onClick={() => navigate("/admin-dashboard")} variant="outline">
-          Página de Administração
+        <Button onClick={() => navigate(`/${slug}/admin-dashboard`)}>
+          Voltar ao Dashboard
         </Button>
       </div>
 
