@@ -19,7 +19,7 @@ export default function Admin() {
 
     const fetchPratos = async () => {
       const { data, error } = await supabase
-        .from("menu-items")
+        .from("menu_items")
         .select("*")
         .eq("empresa_id", empresa.id);
 
