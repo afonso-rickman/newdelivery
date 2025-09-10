@@ -1,4 +1,4 @@
-{/* src/App.tsx */}
+// src/App.tsx
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,42 +23,42 @@ import Checkout from "./pages/Checkout";
 import AppLayout from "@/components/layouts/AppLayout";
 import AdminRegister from "./pages/AdminRegister";
 import AdminCupons from "@/pages/AdminCupons";
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import { EmpresaProvider } from "@/contexts/EmpresaContext";
 
 const queryClient = new QueryClient();
 
-const PrivateRoute = ({ children, role }: { children: React.ReactNode; role?: string }) => {
+const PrivateRoute = ({
+  children,
+  role,
+}: {
+  children: React.ReactNode;
+  role?: string;
+}) => {
   const { currentUser, loading } = useAuth();
 
   if (loading) {
-    return <div className="h-screen w-full flex items-center justify-center">Carregando...</div>;
+    return (
+      <div className="h-screen w-full flex items-center justify-center">
+        Carregando...
+      </div>
+    );
   }
 
   if (!currentUser) {
-    console.log("PrivateRoute: Usuário não autenticado, redirecionando para /login");
     return <Navigate to="/login" />;
   }
 
-  // --- MODIFICAÇÃO AQUI ---
-  // Se o usuário logado for 'admin', ele tem acesso a qualquer página privada,
-  // independentemente do 'role' específico que a rota pede.
-  if (currentUser.role === "admin") {
-    console.log(`PrivateRoute: Usuário é admin. Acesso permitido a todas as páginas.`);
+  // admin global tem acesso a tudo
+  if (currentUser.role === "admin" || currentUser.role === "developer") {
     return <>{children}</>;
   }
-  // --- FIM DA MODIFICAÇÃO ---
 
-  console.log(`PrivateRoute: currentUser.role = '${currentUser.role}' | role esperado = '${role}'`);
-
-  // Lógica de verificação para outros roles (entregador, etc.)
   if (role && currentUser.role !== role) {
-    console.log(`PrivateRoute: Acesso negado. currentUser.role '${currentUser.role}' != role esperado '${role}'. Redirecionando para /unauthorized`);
     return <Navigate to="/unauthorized" />;
   }
 
-  console.log(`PrivateRoute: Acesso permitido para role '${currentUser.role}' na rota com role '${role || "qualquer logado"}'`);
   return <>{children}</>;
 };
 
@@ -70,127 +70,126 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <Routes>
+              {/* Rotas públicas */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/:slug/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/admin-register" element={<AdminRegister />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/unauthorized" element={<NotFound />} />
 
-{/* Routes */}
-<Routes>
-  {/* públicas */}
-  <Route path="/login" element={<Login />} />
-  <Route path="/:slug/login" element={<Login />} />
-  <Route path="/register" element={<Register />} />
-  <Route path="/admin-register" element={<AdminRegister />} />
-  <Route path="/checkout" element={<Checkout />} />
-  <Route path="/forgot-password" element={<ForgotPassword />} />
-  <Route path="/reset-password" element={<ResetPassword />} />
-  <Route path="/unauthorized" element={<NotFound />} />
+              {/* Rota inicial com cardápio global */}
+              <Route
+                path="/"
+                element={
+                  <AppLayout>
+                    <Index />
+                  </AppLayout>
+                }
+              />
 
-  {/* home sem slug */}
-  <Route
-    path="/"
-    element={
-      <AppLayout>
-        <Index />
-      </AppLayout>
-    }
-  />
+              {/* Rotas de cliente com slug */}
+              <Route
+                path="/:slug"
+                element={
+                  <EmpresaProvider>
+                    <AppLayout>
+                      <Index />
+                    </AppLayout>
+                  </EmpresaProvider>
+                }
+              />
 
-  {/* ADMIN — sem slug (mantém compat) */}
-  <Route
-    path="/:slug/admin-coupons"
-    element={
-      <PrivateRoute role="admin">
-        <AppLayout>
-          <AdminCupons />
-        </AppLayout>
-      </PrivateRoute>
-    }
-  />
-  <Route
-    path="/:slug/admin-dashboard"
-    element={
-      <PrivateRoute role="admin">
-        <AppLayout>
-          <AdminDashboard />
-        </AppLayout>
-      </PrivateRoute>
-    }
-  />
-  <Route
-    path="/:slug/admin"
-    element={
-      <PrivateRoute role="admin">
-        <AppLayout>
-          <Admin />
-        </AppLayout>
-      </PrivateRoute>
-    }
-  />
-  <Route
-    path="/:slug/orders"
-    element={
-      <PrivateRoute>
-        <AppLayout>
-          <Orders />
-        </AppLayout>
-      </PrivateRoute>
-    }
-  />
-  <Route
-    path="/:slug/admin-orders"
-    element={
-      <PrivateRoute role="admin">
-        <AppLayout>
-          <AdminOrders />
-        </AppLayout>
-      </PrivateRoute>
-    }
-  />
-  <Route
-    path="/:slug/entregador"
-    element={
-      <PrivateRoute role="entregador">
-        <AppLayout>
-          <Entregador />
-        </AppLayout>
-      </PrivateRoute>
-    }
-  />
-  <Route
-    path="/:slug/pdv"
-    element={
-      <PrivateRoute role="admin">
-        <AppLayout>
-          <PDV />
-        </AppLayout>
-      </PrivateRoute>
-    }
-  />
-  <Route
-    path="/:slug/api/*"
-    element={
-      <PrivateRoute role="admin">
-        <AppLayout>
-          <Api />
-        </AppLayout>
-      </PrivateRoute>
-    }
-  />
+              {/* Rotas administrativas com slug */}
+              <Route
+                path="/:slug/admin-dashboard"
+                element={
+                  <PrivateRoute role="admin">
+                    <AppLayout>
+                      <AdminDashboard />
+                    </AppLayout>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/:slug/admin"
+                element={
+                  <PrivateRoute role="admin">
+                    <AppLayout>
+                      <Admin />
+                    </AppLayout>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/:slug/admin-orders"
+                element={
+                  <PrivateRoute role="admin">
+                    <AppLayout>
+                      <AdminOrders />
+                    </AppLayout>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/:slug/admin-coupons"
+                element={
+                  <PrivateRoute role="admin">
+                    <AppLayout>
+                      <AdminCupons />
+                    </AppLayout>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/:slug/pdv"
+                element={
+                  <PrivateRoute role="admin">
+                    <AppLayout>
+                      <PDV />
+                    </AppLayout>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/:slug/api/*"
+                element={
+                  <PrivateRoute role="admin">
+                    <AppLayout>
+                      <Api />
+                    </AppLayout>
+                  </PrivateRoute>
+                }
+              />
 
-   {/* cliente por slug */}
-  <Route
-    path="/:slug"
-    element={
-      <EmpresaProvider>
-        <AppLayout>
-          <Index />
-        </AppLayout>
-      </EmpresaProvider>
-    }
-  />
+              {/* Outras rotas protegidas */}
+              <Route
+                path="/:slug/orders"
+                element={
+                  <PrivateRoute>
+                    <AppLayout>
+                      <Orders />
+                    </AppLayout>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/:slug/entregador"
+                element={
+                  <PrivateRoute role="entregador">
+                    <AppLayout>
+                      <Entregador />
+                    </AppLayout>
+                  </PrivateRoute>
+                }
+              />
 
-  <Route path="*" element={<NotFound />} />
-</Routes>
-
-
+              {/* Página 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
             <ShoppingCart />
           </BrowserRouter>
         </CartProvider>
