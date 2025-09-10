@@ -19,11 +19,6 @@ import { useEmpresa } from "@/hooks/useEmpresa";
 
 export default function AdminCupons() {
   const { slug } = useParams(); // ← captura o slug
-  const navigate = useNavigate();
-  const logOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
-  };  
   const [cupons, setCupons] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
