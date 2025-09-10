@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useEmpresa } from "@/hooks/useEmpresa";
-import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MenuItemsTab } from "@/components/admin/MenuItemsTab";
@@ -11,78 +8,84 @@ import { CategoriesTab } from "@/components/admin/CategoriesTab";
 import { VariationsTab } from "@/components/admin/VariationsTab";
 import { VariationGroupsTab } from "@/components/admin/VariationGroupsTab";
 import { Database } from "lucide-react";
-import { SeedDataButton } from "@/components/admin/SeedDataButton"; 
+import { SeedDataButton } from "@/components/admin/SeedDataButton";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabaseClient";
 
 const Admin = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug } = useParams();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { empresa, loading: empresaLoading } = useEmpresa(slug ?? null);
-
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [variations, setVariations] = useState<Variation[]>([]);
-  const [variationGroups, setVariationGroups] = useState<VariationGroup[]>([]);
+  const [empresa, setEmpresa] = useState<any | null>(null);
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [variations, setVariations] = useState<any[]>([]);
+  const [variationGroups, setVariationGroups] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("menu");
 
-  // 🔹 Agora usamos o ID vindo do hook
-  const empresaId = empresa?.id ?? null;
-
+  // 🔹 Buscar empresa pelo slug
   useEffect(() => {
-    if (!currentUser) {
-      navigate("/login");
-      return;
+    const fetchEmpresa = async () => {
+      const { data, error } = await supabase
+        .from("empresas")
+        .select("*")
+        .eq("slug", slug)
+        .single();
+
+      if (error || !data) {
+        console.error("Erro ao buscar empresa:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar a empresa.",
+          variant: "destructive",
+        });
+        navigate("/");
+        return;
+      }
+
+      setEmpresa(data);
+    };
+
+    fetchEmpresa();
+  }, [slug, navigate, toast]);
+
+  // 🔹 Carregar dados só depois que a empresa foi encontrada
+  useEffect(() => {
+    if (empresa?.id) {
+      loadData(empresa.id);
     }
+  }, [empresa]);
 
-    if (empresaId) {
-      loadData();
-    } else {
-      console.warn("Nenhum empresaId encontrado. Dados podem não ser carregados.");
-      setLoading(false);
-    }
-  }, [currentUser, navigate, empresaId]);
-
-  const loadData = async () => {
-    if (!empresaId) return;
-
+  const loadData = async (empresaId: string) => {
     try {
       setLoading(true);
 
-      const { data: categoriesData, error: categoriesError } = await supabase
+      const { data: categoriesData } = await supabase
         .from("categories")
         .select("*")
         .eq("empresa_id", empresaId);
+      setCategories(categoriesData || []);
 
-      if (categoriesError) throw categoriesError;
-      setCategories(categoriesData);
-
-      const { data: itemsData, error: itemsError } = await supabase
+      const { data: itemsData } = await supabase
         .from("menu_items")
         .select("*")
         .eq("empresa_id", empresaId);
+      setMenuItems(itemsData || []);
 
-      if (itemsError) throw itemsError;
-      setMenuItems(itemsData);
-
-      const { data: variationGroupsData, error: variationGroupsError } = await supabase
+      const { data: variationGroupsData } = await supabase
         .from("variation_groups")
         .select("*")
         .eq("empresa_id", empresaId);
+      setVariationGroups(variationGroupsData || []);
 
-      if (variationGroupsError) throw variationGroupsError;
-      setVariationGroups(variationGroupsData);
-
-      const { data: variationsData, error: variationsError } = await supabase
+      const { data: variationsData } = await supabase
         .from("variations")
         .select("*")
         .eq("empresa_id", empresaId);
-
-      if (variationsError) throw variationsError;
-      setVariations(variationsData);
+      setVariations(variationsData || []);
 
       toast({
         title: "Sucesso",
@@ -110,10 +113,10 @@ const Admin = () => {
         {/* Header e botões */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
           <h1 className="text-xl sm:text-2xl font-bold leading-tight">
-            Cardápio {empresaLoading ? "Carregando..." : empresa?.nome ?? "Empresa não encontrada"}
+            {empresa ? `Cardápio ${empresa.nome}` : "Carregando empresa..."}
           </h1>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <SeedDataButton onDataChange={loadData} />
+            <SeedDataButton onDataChange={() => empresa && loadData(empresa.id)} />
             <Button
               onClick={() => navigate(`/${slug}/admin-dashboard`)}
               variant="outline"
@@ -126,6 +129,7 @@ const Admin = () => {
 
         {loading && <div className="text-center py-4 text-sm">Carregando dados...</div>}
 
+        {/* Alerta para coleções vazias */}
         {!loading && (menuItems.length === 0 || categories.length === 0) && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
             <div className="flex items-start gap-2 mb-2">
@@ -144,44 +148,67 @@ const Admin = () => {
         {/* Tabs */}
         <Tabs defaultValue="menu" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 h-auto p-1">
-            <TabsTrigger value="menu">Itens</TabsTrigger>
-            <TabsTrigger value="categories">Categorias</TabsTrigger>
-            <TabsTrigger value="variations">Variações</TabsTrigger>
-            <TabsTrigger value="groups">Grupos</TabsTrigger>
+            <TabsTrigger
+              value="menu"
+              className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white"
+            >
+              Itens
+            </TabsTrigger>
+            <TabsTrigger
+              value="categories"
+              className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white"
+            >
+              Categorias
+            </TabsTrigger>
+            <TabsTrigger
+              value="variations"
+              className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white"
+            >
+              Variações
+            </TabsTrigger>
+            <TabsTrigger
+              value="groups"
+              className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white"
+            >
+              Grupos
+            </TabsTrigger>
           </TabsList>
 
           <div className="w-full overflow-x-hidden">
-            <TabsContent value="menu">
+            <TabsContent value="menu" className="mt-0">
               <MenuItemsTab
                 menuItems={menuItems}
                 categories={categories}
                 variations={variations}
                 variationGroups={variationGroups}
                 loading={loading}
-                onDataChange={loadData}
+                onDataChange={() => empresa && loadData(empresa.id)}
               />
             </TabsContent>
-            <TabsContent value="categories">
+
+            <TabsContent value="categories" className="mt-0">
               <CategoriesTab
                 categories={categories}
                 loading={loading}
-                onDataChange={loadData}
+                onDataChange={() => empresa && loadData(empresa.id)}
               />
             </TabsContent>
-            <TabsContent value="variations">
+
+            <TabsContent value="variations" className="mt-0">
               <VariationsTab
                 variations={variations}
                 categories={categories}
                 loading={loading}
-                onDataChange={loadData}
+                onDataChange={() => empresa && loadData(empresa.id)}
               />
             </TabsContent>
-            <TabsContent value="groups">
+
+            <TabsContent value="groups" className="mt-0">
               <VariationGroupsTab
                 variationGroups={variationGroups}
                 variations={variations}
                 loading={loading}
-                onDataChange={loadData}
+                onDataChange={() => empresa && loadData(empresa.id)}
               />
             </TabsContent>
           </div>
