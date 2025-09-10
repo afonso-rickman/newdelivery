@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,10 @@ import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch"; // Importe o componente Switch
 import { useEmpresa } from "@/hooks/useEmpresa";
+
+const AdminCupons = () => {
+  const { slug } = useParams();
+  const navigate = useNavigate();
 
 export default function AdminCupons() {
   const [cupons, setCupons] = useState<any[]>([]);
