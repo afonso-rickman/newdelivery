@@ -18,6 +18,12 @@ import { Switch } from "@/components/ui/switch"; // Importe o componente Switch
 import { useEmpresa } from "@/hooks/useEmpresa";
 
 export default function AdminCupons() {
+  const { slug } = useParams(); // ← captura o slug
+  const navigate = useNavigate();
+  const logOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };  
   const [cupons, setCupons] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -221,10 +227,6 @@ export default function AdminCupons() {
       }
     }
   };
-
-const AdminCupons = () => {
-  const { slug } = useParams();
-  const navigate = useNavigate();
 
  return (
     <div className="p-6 max-w-4xl mx-auto font-sans">
