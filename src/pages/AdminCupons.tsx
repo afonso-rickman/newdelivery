@@ -16,8 +16,6 @@ import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch"; // Importe o componente Switch
 import { useEmpresa } from "@/hooks/useEmpresa";
-import { useParams } from "react-router-dom";
-const { slug } = useParams<{ slug: string }>();
 
 
 export default function AdminCupons() {
