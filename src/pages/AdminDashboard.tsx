@@ -1,7 +1,17 @@
+// src/pages/AdminDashboard.tsx
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, Settings, LogOut, ArrowLeft, Calculator, Percent, Users, Truck } from "lucide-react";
+import {
+  ClipboardList,
+  Settings,
+  LogOut,
+  ArrowLeft,
+  Calculator,
+  Percent,
+  Users,
+  Truck,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -9,13 +19,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useProtectPage } from "@/hooks/useProtectPage";
@@ -26,50 +29,38 @@ import DelivererManagementModal from "@/components/DelivererManagementModal";
 const AdminDashboard = () => {
   useProtectPage("admin");
 
+  const { slug } = useParams<{ slug: string }>(); // 🔹 Captura o slug da URL
   const navigate = useNavigate();
   const { logOut } = useAuth();
-  // CORREÇÃO AQUI: Desestruturando 'currentUser' diretamente de useAuthState
-  const { currentUser, loading: authUserLoading } = useAuthState(); 
-
-  // Passa currentUser?.id apenas quando ele está disponível e authUserLoading é false
+  const { currentUser, loading: authUserLoading } = useAuthState();
   const { empresa, loading: empresaDataLoading } = useEmpresa(
-    authUserLoading ? null : (currentUser?.id ?? null) // Usa currentUser.id
+    authUserLoading ? null : currentUser?.id ?? null
   );
 
   const [isDelivererModalOpen, setIsDelivererModalOpen] = useState(false);
 
-  // Combina os estados de carregamento
   const totalLoading = authUserLoading || empresaDataLoading;
 
-  // Log para depuração do estado da empresa
   useEffect(() => {
     console.log("AdminDashboard: Estado da empresa atualizado.");
-    console.log("AdminDashboard: authUserLoading:", authUserLoading);
-    console.log("AdminDashboard: currentUser:", currentUser); // Loga o objeto currentUser completo
-    console.log("AdminDashboard: currentUser.id:", currentUser?.id);
-    console.log("AdminDashboard: empresaDataLoading:", empresaDataLoading);
-    console.log("AdminDashboard: empresa:", empresa);
-    console.log("AdminDashboard: empresa.id:", empresa?.id);
-    console.log("AdminDashboard: totalLoading:", totalLoading);
+    console.log("authUserLoading:", authUserLoading);
+    console.log("currentUser:", currentUser);
+    console.log("empresa:", empresa);
+    console.log("totalLoading:", totalLoading);
   }, [currentUser, empresa, empresaDataLoading, authUserLoading, totalLoading]);
 
-
-  // Função para abrir o modal de entregadores, verificando se o empresaId está disponível
   const handleOpenDelivererModal = () => {
-    if (totalLoading) { // Usa totalLoading combinado
+    if (totalLoading) {
       console.log("AdminDashboard: Carregando dados, não abrindo modal.");
-      // Opcional: mostrar um toast informando que os dados ainda estão carregando
       return;
     }
     if (!empresa?.id) {
-      console.warn("AdminDashboard: empresa.id não disponível, não é possível abrir o modal de entregadores.");
-      // Opcional: mostrar um toast informando que o ID da empresa não foi encontrado
+      console.warn("AdminDashboard: empresa.id não disponível.");
       return;
     }
-    console.log("AdminDashboard: Abrindo modal de entregadores com empresaId:", empresa.id);
+    console.log("Abrindo modal de entregadores com empresaId:", empresa.id);
     setIsDelivererModalOpen(true);
   };
-
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -82,7 +73,7 @@ const AdminDashboard = () => {
         </div>
         <div className="flex gap-2">
           <Button
-            onClick={() => navigate("/")}
+            onClick={() => navigate(`/${slug}`)}
             variant="outline"
             className="flex items-center gap-2"
           >
@@ -99,7 +90,8 @@ const AdminDashboard = () => {
           </Button>
         </div>
       </div>
-<div className="mt-8 p-4 bg-gray-50 rounded-lg">
+
+      <div className="mt-8 p-4 bg-gray-50 rounded-lg">
         <h2 className="text-lg font-semibold mb-2">Bem-vindo, Administrador!</h2>
         <p className="text-gray-600">
           Use este painel para gerenciar todos os aspectos do seu restaurante.
@@ -107,7 +99,9 @@ const AdminDashboard = () => {
           e acessar o sistema de PDV.
         </p>
       </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl">
+        {/* Pedidos */}
         <Card className="hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 p-3 bg-blue-100 rounded-full w-fit">
@@ -125,6 +119,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
+        {/* Cardápio */}
         <Card className="hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 p-3 bg-green-100 rounded-full w-fit">
@@ -142,6 +137,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
+        {/* PDV */}
         <Card className="hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 p-3 bg-purple-100 rounded-full w-fit">
@@ -158,6 +154,8 @@ const AdminDashboard = () => {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Cupons */}
         <Card className="hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 p-3 bg-yellow-100 rounded-full w-fit">
@@ -175,7 +173,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* NOVO CARD: Gerenciamento de Entregadores */}
+        {/* Entregadores */}
         <Card className="hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 p-3 bg-orange-100 rounded-full w-fit">
@@ -183,22 +181,21 @@ const AdminDashboard = () => {
             </div>
             <CardTitle className="text-xl">Gerenciar Entregadores</CardTitle>
             <CardDescription>
-              Cadastre, Visualize, Edite, Ative ou Desative Entregadores
+              Cadastre, visualize e gerencie seus entregadores
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button
-              onClick={handleOpenDelivererModal} // Chama a nova função
+              onClick={handleOpenDelivererModal}
               className="w-full"
-              disabled={totalLoading || !empresa?.id} // Desabilita o botão enquanto carrega ou se empresaId não estiver disponível
+              disabled={totalLoading || !empresa?.id}
             >
               {totalLoading ? "Carregando..." : "Acessar Entregadores"}
             </Button>
           </CardContent>
         </Card>
-        {/* FIM DO NOVO CARD */}
 
-        {/* NOVO CARD: Pedidos em rota de entrega */}
+        {/* Pedidos em rota */}
         <Card className="hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 p-3 bg-blue-100 rounded-full w-fit">
@@ -211,23 +208,18 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <Button asChild className="w-full">
-              <Link to="/entregador">Ver Pedidos</Link>
+              <Link to={`/${slug}/entregador`}>Ver Pedidos</Link>
             </Button>
           </CardContent>
         </Card>
-		{/* FIM DO NOVO CARD */}
-        
       </div>
 
-
-      
-      {/* Modal de Gerenciamento de Entregadores */}
-      {/* Renderiza o modal apenas se estiver aberto E o empresaId estiver disponível */}
+      {/* Modal de Entregadores */}
       {isDelivererModalOpen && empresa?.id && (
         <DelivererManagementModal
           isOpen={isDelivererModalOpen}
           onClose={() => setIsDelivererModalOpen(false)}
-          empresaId={empresa.id} // Passa o empresa.id garantido
+          empresaId={empresa.id}
         />
       )}
     </div>
