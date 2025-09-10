@@ -228,7 +228,7 @@ export default function AdminCupons() {
         <h1 className="text-2xl font-bold text-gray-800">Cupons de Desconto</h1>
              <div className="flex gap-2 items-center">
           <Button
-            onClick={() => navigate("/admin-dashboard")}
+            onClick={() => navigate(`/${slug}/admin-dashboard`)}
             className="bg-[#fa6500] hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out flex items-center gap-2"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-left">
