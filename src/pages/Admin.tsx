@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useEmpresa } from "@/hooks/useEmpresa";
 import { MenuItem, Category, Variation, VariationGroup } from "@/types/menu";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +13,7 @@ import { VariationGroupsTab } from "@/components/admin/VariationGroupsTab";
 import { Database } from "lucide-react";
 import { SeedDataButton } from "@/components/admin/SeedDataButton"; 
 import { supabase } from '@/lib/supabaseClient';
+import { useAuthState } from "@/hooks/useAuthState";
 
 const Admin = () => {
   const { slug } = useParams();
@@ -123,7 +125,7 @@ const Admin = () => {
         {/* Header e botões */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
           <h1 className="text-xl sm:text-2xl font-bold leading-tight">
-            Gerenciamento do Cardápio
+           Cardápio {empresa?.nome} 
           </h1>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <SeedDataButton onDataChange={loadData} />
