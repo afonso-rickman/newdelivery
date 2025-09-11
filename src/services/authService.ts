@@ -15,19 +15,19 @@ export const authService = {
    * Faz login no Supabase Auth + valida empresa pelo slug
    */
   signIn: async (email: string, password: string, slug?: string): Promise<Usuario> => {
-	 console.log("[authService] Tentando login", { email, slug });
-    // 1. Login no Supabase
+    console.log("[authService] Tentando login", { email, slug });
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+
     if (error || !data.user) {
-		console.error("[authService] Erro no Supabase Auth", error);
+      console.error("[authService] Erro no Supabase Auth", error);
       throw new Error("Email ou senha inválidos");
     }
 
-    // 2. Busca registro do usuário na tabela usuarios
-	console.log("[authService] Auth OK, buscando em usuarios...");
+    // Busca registro do usuário na tabela usuarios
     const { data: usuario, error: usuarioError } = await supabase
       .from("usuarios")
       .select("id, empresa_id, role, nome, telefone, email")
@@ -35,22 +35,21 @@ export const authService = {
       .single();
 
     if (usuarioError || !usuario) {
-	  console.error("[authService] Usuário não encontrado na tabela usuarios", usuarioError);
+      console.error("[authService] Usuário não encontrado na tabela usuarios", usuarioError);
       throw new Error("Usuário não encontrado na tabela usuarios");
     }
 
-    // 3. Se usuário for developer → ignora validação de empresa
+    // Se developer → ignora validação de empresa
     if (usuario.role === "developer") {
       return usuario;
     }
 
-    // 4. Se não foi passado slug → login genérico (sem empresa específica)
+    // Se não foi passado slug → login genérico
     if (!slug) {
       return usuario;
-	    console.log("[authService] Usuário encontrado", usuario);
     }
 
-    // 5. Busca empresa pelo slug
+    // Busca empresa pelo slug
     const { data: empresa, error: empresaError } = await supabase
       .from("empresas")
       .select("id, slug")
@@ -61,9 +60,58 @@ export const authService = {
       throw new Error("Empresa não encontrada");
     }
 
-    // 6. Verifica se usuário pertence a essa empresa
+    // Verifica se usuário pertence a essa empresa
     if (usuario.empresa_id !== empresa.id) {
       throw new Error("Usuário não tem acesso a esta empresa");
+    }
+
+    return usuario;
+  },
+
+  /**
+   * Cria usuário no Supabase Auth + vincula na tabela usuarios
+   */
+  signUp: async (
+    email: string,
+    password: string,
+    nome: string,
+    telefone?: string,
+    empresaId?: string
+  ): Promise<Usuario> => {
+    console.log("[authService] Tentando signup", { email, empresaId });
+
+    // 1. Cria usuário no Supabase Auth
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error || !data.user) {
+      console.error("[authService] Erro ao criar usuário no Supabase Auth", error);
+      throw new Error("Erro ao criar conta. Verifique os dados.");
+    }
+
+    const user = data.user;
+
+    // 2. Insere também na tabela usuarios
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .insert([
+        {
+          id: user.id, // mesmo ID do Supabase Auth
+          empresa_id: empresaId ?? null,
+          nome,
+          telefone,
+          role: "cliente", // padrão inicial
+          email,
+        },
+      ])
+      .select("id, empresa_id, role, nome, telefone, email")
+      .single();
+
+    if (usuarioError || !usuario) {
+      console.error("[authService] Erro ao inserir na tabela usuarios", usuarioError);
+      throw new Error("Erro ao salvar usuário na tabela usuarios.");
     }
 
     return usuario;
