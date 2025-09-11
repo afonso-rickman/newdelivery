@@ -1,3 +1,4 @@
+// src/pages/Register.tsx
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -43,13 +44,32 @@ type FormValues = z.infer<typeof formSchema>;
 const Register = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [empresaNome, setEmpresaNome] = useState<string | null>(null);
-  const [empresaId, setEmpresaId] = useState<string | null>(null);
-
   const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { slug } = useParams<{ slug: string }>();
+  const { slug } = useParams(); // 👈 pega slug da URL
+  const [empresa, setEmpresa] = useState<any | null>(null);
+
+  // Busca empresa pelo slug
+  useEffect(() => {
+    const fetchEmpresa = async () => {
+      if (!slug) return;
+      const { data, error } = await supabase
+        .from("empresas")
+        .select("id, nome, slug")
+        .eq("slug", slug)
+        .single();
+
+      if (error) {
+        console.error("Erro ao buscar empresa pelo slug:", error.message);
+        setError("Empresa não encontrada.");
+      } else {
+        setEmpresa(data);
+      }
+    };
+
+    fetchEmpresa();
+  }, [slug]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -62,54 +82,31 @@ const Register = () => {
     },
   });
 
-  // Buscar empresa pelo slug
-  useEffect(() => {
-    const fetchEmpresa = async () => {
-      if (!slug) return;
-      const { data, error } = await supabase
-        .from("empresas")
-        .select("id, nome")
-        .eq("slug", slug)
-        .single();
-
-      if (error || !data) {
-        console.error("Erro ao buscar empresa:", error?.message);
-        setEmpresaNome(null);
-        setEmpresaId(null);
-      } else {
-        setEmpresaNome(data.nome);
-        setEmpresaId(data.id);
-      }
-    };
-
-    fetchEmpresa();
-  }, [slug]);
-
   const onSubmit = async (values: FormValues) => {
     try {
       setError("");
       setLoading(true);
 
-      if (!empresaId) {
-        throw new Error("Empresa não encontrada para este registro");
+      if (!empresa?.id) {
+        throw new Error("Empresa inválida. Não foi possível criar a conta.");
       }
 
       await signUp(
-	  values.email,
-	  values.password,
-	  values.name,
-	  values.phone,
-	  empresa?.id
-	  );
+        values.email,
+        values.password,
+        values.name,
+        values.phone,
+        empresa.id // 👈 agora está definido corretamente
+      );
 
       toast({
         title: "Conta criada com sucesso",
-        description: "Você foi registrado e conectado automaticamente",
+        description: `Você foi registrado na empresa ${empresa.nome}`,
       });
 
-      navigate(`/${slug}/admin-dashboard`);
+      navigate(`/${slug}/login`);
     } catch (error: any) {
-      console.error("Erro no signup:", error.message || error);
+      console.error("Erro no signup:", error.message);
       setError("Falha ao criar conta. Verifique seus dados e tente novamente.");
     } finally {
       setLoading(false);
@@ -121,7 +118,7 @@ const Register = () => {
       <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-lg shadow-md">
         <div className="text-center">
           <h2 className="text-3xl font-extrabold text-gray-900">
-            Criar Conta {empresaNome ? `em ${empresaNome}` : ""}
+            Criar conta em {empresa?.nome || slug}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             Ou{" "}
