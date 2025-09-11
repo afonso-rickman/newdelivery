@@ -1,145 +1,63 @@
 // src/services/authService.ts
 import { supabase } from "@/lib/supabaseClient";
 
-export interface Usuario {
-  id: string;
-  empresa_id: string | null;
-  role: "admin" | "entregador" | "developer" | "cliente" | null;
-  nome: string | null;
-  telefone: string | null;
-  email: string | null;
-}
-
 export const authService = {
-  /**
-   * Faz login no Supabase Auth + valida empresa pelo slug
-   */
-  signIn: async (email: string, password: string, slug?: string): Promise<Usuario> => {
-    console.log("[authService] Tentando login", { email, slug });
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error || !data.user) {
-      console.error("[authService] Erro no Supabase Auth", error);
-      throw new Error("Email ou senha inválidos");
-    }
-
-    // Busca registro do usuário na tabela usuarios
-    const { data: usuario, error: usuarioError } = await supabase
-      .from("usuarios")
-      .select("id, empresa_id, role, nome, telefone, email")
-      .eq("id", data.user.id)
-      .single();
-
-    if (usuarioError || !usuario) {
-      console.error("[authService] Usuário não encontrado na tabela usuarios", usuarioError);
-      throw new Error("Usuário não encontrado na tabela usuarios");
-    }
-
-    // Se developer → ignora validação de empresa
-    if (usuario.role === "developer") {
-      return usuario;
-    }
-
-    // Se não foi passado slug → login genérico
-    if (!slug) {
-      return usuario;
-    }
-
-    // Busca empresa pelo slug
-    const { data: empresa, error: empresaError } = await supabase
-      .from("empresas")
-      .select("id, slug")
-      .eq("slug", slug)
-      .single();
-
-    if (empresaError || !empresa) {
-      throw new Error("Empresa não encontrada");
-    }
-
-    // Verifica se usuário pertence a essa empresa
-    if (usuario.empresa_id !== empresa.id) {
-      throw new Error("Usuário não tem acesso a esta empresa");
-    }
-
-    return usuario;
-  },
+  // ... signIn, signOut, getCurrentUser já existentes
 
   /**
-   * Cria usuário no Supabase Auth + vincula na tabela usuarios
+   * Faz registro de novo usuário no Supabase Auth
+   * + cria entrada na tabela usuarios vinculada à empresa
    */
   signUp: async (
     email: string,
     password: string,
     nome: string,
-    telefone?: string,
-    empresaId?: string
-  ): Promise<Usuario> => {
-    console.log("[authService] Tentando signup", { email, empresaId });
+    telefone: string | null,
+    slug: string
+  ) => {
+    console.log("[authService] Iniciando signup", { email, slug });
 
-    // 1. Cria usuário no Supabase Auth
+    // 1. Buscar empresa pelo slug
+    const { data: empresa, error: empresaError } = await supabase
+      .from("empresas")
+      .select("id, slug, nome")
+      .eq("slug", slug)
+      .single();
+
+    if (empresaError || !empresa) {
+      console.error("[authService] Empresa não encontrada pelo slug:", slug, empresaError);
+      throw new Error("Empresa não encontrada");
+    }
+
+    // 2. Criar usuário no Supabase Auth
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
 
     if (error || !data.user) {
-      console.error("[authService] Erro ao criar usuário no Supabase Auth", error);
-      throw new Error("Erro ao criar conta. Verifique os dados.");
+      console.error("[authService] Erro ao criar usuário no Supabase Auth:", error);
+      throw new Error(error?.message || "Erro ao criar usuário");
     }
 
-    const user = data.user;
+    // 3. Inserir usuário na tabela usuarios com empresa_id
+    const { error: insertError } = await supabase.from("usuarios").insert([
+      {
+        id: data.user.id,
+        email,
+        nome,
+        telefone,
+        empresa_id: empresa.id,
+        role: "cliente", // ou admin, dependendo do fluxo
+      },
+    ]);
 
-    // 2. Insere também na tabela usuarios
-    const { data: usuario, error: usuarioError } = await supabase
-      .from("usuarios")
-      .insert([
-        {
-          id: user.id, // mesmo ID do Supabase Auth
-          empresa_id: empresaId ?? null,
-          nome,
-          telefone,
-          role: "cliente", // padrão inicial
-          email,
-        },
-      ])
-      .select("id, empresa_id, role, nome, telefone, email")
-      .single();
-
-    if (usuarioError || !usuario) {
-      console.error("[authService] Erro ao inserir na tabela usuarios", usuarioError);
-      throw new Error("Erro ao salvar usuário na tabela usuarios.");
+    if (insertError) {
+      console.error("[authService] Erro ao inserir na tabela usuarios:", insertError);
+      throw new Error("Erro ao salvar usuário na tabela usuarios");
     }
 
-    return usuario;
-  },
-
-  /**
-   * Logout no Supabase
-   */
-  signOut: async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-  },
-
-  /**
-   * Retorna usuário atual autenticado no Supabase + dados de usuarios
-   */
-  getCurrentUser: async (): Promise<Usuario | null> => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return null;
-
-    const { data: usuario } = await supabase
-      .from("usuarios")
-      .select("id, empresa_id, role, nome, telefone, email")
-      .eq("id", user.id)
-      .single();
-
-    return usuario ?? null;
+    console.log("[authService] Usuário registrado com sucesso!");
+    return data.user;
   },
 };
