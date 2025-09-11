@@ -94,7 +94,13 @@ const Register = () => {
         throw new Error("Empresa não encontrada para este registro");
       }
 
-      await signUp(values.email, values.password, values.name, values.phone, empresaId);
+      await signUp(
+	  values.email,
+	  values.password,
+	  values.name,
+	  values.phone,
+	  empresa?.id
+	  );
 
       toast({
         title: "Conta criada com sucesso",
