@@ -74,7 +74,7 @@ const App = () => (
               {/* Rotas públicas */}
               <Route path="/login" element={<Login />} />
               <Route path="/:slug/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+              <Route path="/:slug/register" element={<Register />} />
               <Route path="/admin-register" element={<AdminRegister />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
