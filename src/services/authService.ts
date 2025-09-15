@@ -1,8 +1,17 @@
 // src/services/authService.ts
 import { supabase } from "@/lib/supabaseClient";
 
+export interface Usuario {
+  id: string;
+  empresa_id: string | null;
+  role: "admin" | "entregador" | "developer" | "cliente" | null;
+  nome: string | null;
+  telefone: string | null;
+  email: string | null;
+}
+
 export const authService = {
-  // ... signIn, signOut, getCurrentUser já existentes
+  // ... signIn, signOut, getCurrentUser
 
   /**
    * Faz registro de novo usuário no Supabase Auth
@@ -14,7 +23,7 @@ export const authService = {
     nome: string,
     telefone: string | null,
     slug: string
-  ) => {
+  ): Promise<Usuario> => {
     console.log("[authService] Iniciando signup", { email, slug });
 
     // 1. Buscar empresa pelo slug
@@ -41,23 +50,27 @@ export const authService = {
     }
 
     // 3. Inserir usuário na tabela usuarios com empresa_id
-    const { error: insertError } = await supabase.from("usuarios").insert([
-      {
-        id: data.user.id,
-        email,
-        nome,
-        telefone,
-        empresa_id: empresa.id,
-        role: "cliente", // ou admin, dependendo do fluxo
-      },
-    ]);
+    const { data: usuario, error: insertError } = await supabase
+      .from("usuarios")
+      .insert([
+        {
+          id: data.user.id,
+          email,
+          nome,
+          telefone,
+          empresa_id: empresa.id,
+          role: "cliente",
+        },
+      ])
+      .select("*")
+      .single();
 
-    if (insertError) {
+    if (insertError || !usuario) {
       console.error("[authService] Erro ao inserir na tabela usuarios:", insertError);
       throw new Error("Erro ao salvar usuário na tabela usuarios");
     }
 
-    console.log("[authService] Usuário registrado com sucesso!");
-    return data.user;
+    console.log("[authService] Usuário registrado com sucesso!", usuario);
+    return usuario as Usuario;
   },
 };

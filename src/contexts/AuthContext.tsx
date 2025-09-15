@@ -6,10 +6,19 @@ interface AuthContextType {
   currentUser: Usuario | null;
   loading: boolean;
   signIn: (email: string, password: string, slug?: string) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    name: string,
+    phone?: string,
+    empresaId?: string
+  ) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined
+);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<Usuario | null>(null);
@@ -34,19 +43,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setCurrentUser(user);
   };
 
+  const signUp = async (
+    email: string,
+    password: string,
+    name: string,
+    phone?: string,
+    empresaId?: string
+  ) => {
+    const user = await authService.signUp(
+      email,
+      password,
+      name,
+      phone,
+      empresaId
+    );
+    setCurrentUser(user);
+  };
+
   const signOut = async () => {
     await authService.signOut();
     setCurrentUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, loading, signIn, signOut }}>
+    <AuthContext.Provider
+      value={{ currentUser, loading, signIn, signUp, signOut }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-// 🔹 Hook useAuth (inline no AuthContext)
+// 🔹 Hook useAuth
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
